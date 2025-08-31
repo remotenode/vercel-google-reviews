@@ -6,72 +6,374 @@ import fs from 'fs';
 
 // Define the endpoint
 export default async (req, res) => {
-    const { appid, country, lang } = req.query;
-
-    // Validate required parameter
-    if (!appid) {
-        return res.status(400).json({ error: 'Missing required parameter: appid' });
+    const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+    
+    // Handle Swagger routes
+    if (pathname === '/swagger') {
+        const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Reviews API - Swagger Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+    <style>
+        body { margin: 0; padding: 0; }
+        .swagger-ui .topbar { display: none; }
+        .swagger-ui .info .title { color: #3b4151; }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: '/swagger.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout"
+            });
+        };
+    </script>
+</body>
+</html>`;
+        res.setHeader('Content-Type', 'text/html');
+        return res.send(html);
     }
-
-    const options = {
-        num: 30,
-        sort: gplay.sort.NEWEST,
-        appId: appid,
-    };
-
-    if (country) options.country = country;
-    if (lang) {
-        options.lang = lang;
-
-        try {
-            const reviews = await gplay.reviews(options);
-            return res.json(reviews.data);
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to fetch reviews' });
-        }
-
-    }
-
-   /* const filePath = 'languages.json';// path.join(__dirname, 'api', 'languages.json');
-    const rawData = fs.readFileSync(filePath, 'utf8');
-    var langs = JSON.parse(rawData);*/
-
-    const fetchPromises = languages.map(async (l) => {
-        const langOptions = { ...options, lang: l.code };
-        try {
-            const result = await gplay.reviews(langOptions);
-            return result.data || [];
-        } catch (err) {
-            console.error(`Error fetching reviews for ${l.code}:`, err.message);
-            return [];
-        }
-    });
-
-    try {
-        const results = await Promise.all(fetchPromises);
-        let allReviews = results.flat();
-                console.log(`Take ${allReviews.length} reviews`);
-        const seen = new Set();
-        allReviews = allReviews.filter(review => {
-            if (!seen.has(review.id)) {
-                seen.add(review.id);
-                return true;
+    
+    if (pathname === '/swagger.json') {
+        const swaggerSpec = {
+            "openapi": "3.0.0",
+            "info": {
+                "title": "Google Reviews API",
+                "description": "API for fetching Google Play Store app reviews with multi-language support",
+                "version": "1.0.0",
+                "contact": {
+                    "name": "API Support",
+                    "url": "https://github.com/remotenode/vercel-google-reviews"
+                }
+            },
+            "servers": [
+                {
+                    "url": "https://google-reviews-9jxjwigrp-artsyomavanesov-gmailcoms-projects.vercel.app",
+                    "description": "Production server"
+                }
+            ],
+            "paths": {
+                "/app": {
+                    "get": {
+                        "summary": "Get Google Play Store Reviews",
+                        "description": "Fetch reviews for a specific app from Google Play Store. Supports multiple languages and countries.",
+                        "operationId": "getAppReviews",
+                        "parameters": [
+                            {
+                                "name": "appid",
+                                "in": "query",
+                                "required": true,
+                                "description": "The Google Play Store app ID (e.g., 'com.whatsapp')",
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "example": "com.whatsapp"
+                            },
+                            {
+                                "name": "country",
+                                "in": "query",
+                                "required": false,
+                                "description": "Country code for region-specific reviews (e.g., 'us', 'gb', 'de')",
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "example": "us"
+                            },
+                            {
+                                "name": "lang",
+                                "in": "query",
+                                "required": false,
+                                "description": "Language code for specific language reviews. If not provided, fetches reviews in all supported languages.",
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "example": "en"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Successful response",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string",
+                                                                "description": "Unique review ID"
+                                                            },
+                                                            "userName": {
+                                                                "type": "string",
+                                                                "description": "Name of the reviewer"
+                                                            },
+                                                            "userImage": {
+                                                                "type": "string",
+                                                                "description": "URL to reviewer's profile image"
+                                                            },
+                                                            "content": {
+                                                                "type": "string",
+                                                                "description": "Review content"
+                                                            },
+                                                            "score": {
+                                                                "type": "number",
+                                                                "description": "Rating score (1-5)"
+                                                            },
+                                                            "thumbsUpCount": {
+                                                                "type": "number",
+                                                                "description": "Number of thumbs up"
+                                                            },
+                                                            "reviewCreatedVersion": {
+                                                                "type": "string",
+                                                                "description": "App version when review was created"
+                                                            },
+                                                            "at": {
+                                                                "type": "string",
+                                                                "description": "Review creation date"
+                                                            },
+                                                            "replyContent": {
+                                                                "type": "string",
+                                                                "description": "Developer's reply to the review"
+                                                            },
+                                                            "repliedAt": {
+                                                                "type": "string",
+                                                                "description": "Date when developer replied"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "example": {
+                                            "data": [
+                                                {
+                                                    "id": "gp:AOqpTOHh_123456789",
+                                                    "userName": "John Doe",
+                                                    "userImage": "https://lh3.googleusercontent.com/...",
+                                                    "content": "Great app! Very useful.",
+                                                    "score": 5,
+                                                    "thumbsUpCount": 12,
+                                                    "reviewCreatedVersion": "2.1.0",
+                                                    "at": "2024-01-15T10:30:00Z",
+                                                    "replyContent": "Thank you for your feedback!",
+                                                    "repliedAt": "2024-01-16T09:15:00Z"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "400": {
+                                "description": "Bad request - Missing required parameter",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "example": {
+                                            "error": "Missing required parameter: appid"
+                                        }
+                                    }
+                                }
+                            },
+                            "500": {
+                                "description": "Internal server error",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "example": {
+                                            "error": "Failed to fetch reviews"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/swagger": {
+                    "get": {
+                        "summary": "API Documentation",
+                        "description": "Interactive API documentation using Swagger UI",
+                        "operationId": "getSwaggerUI",
+                        "responses": {
+                            "200": {
+                                "description": "HTML page with Swagger UI"
+                            }
+                        }
+                    }
+                },
+                "/swagger.json": {
+                    "get": {
+                        "summary": "OpenAPI Specification",
+                        "description": "Returns the OpenAPI specification in JSON format",
+                        "operationId": "getSwaggerSpec",
+                        "responses": {
+                            "200": {
+                                "description": "OpenAPI specification"
+                            }
+                        }
+                    }
+                }
+            },
+            "components": {
+                "schemas": {
+                    "Review": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "description": "Unique review ID"
+                            },
+                            "userName": {
+                                "type": "string",
+                                "description": "Name of the reviewer"
+                            },
+                            "userImage": {
+                                "type": "string",
+                                "description": "URL to reviewer's profile image"
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "Review content"
+                            },
+                            "score": {
+                                "type": "number",
+                                "description": "Rating score (1-5)"
+                            },
+                            "thumbsUpCount": {
+                                "type": "number",
+                                "description": "Number of thumbs up"
+                            },
+                            "reviewCreatedVersion": {
+                                "type": "string",
+                                "description": "App version when review was created"
+                            },
+                            "at": {
+                                "type": "string",
+                                "description": "Review creation date"
+                            },
+                            "replyContent": {
+                                "type": "string",
+                                "description": "Developer's reply to the review"
+                            },
+                            "repliedAt": {
+                                "type": "string",
+                                "description": "Date when developer replied"
+                            }
+                        }
+                    }
+                }
             }
-            return false;
+        };
+        res.setHeader('Content-Type', 'application/json');
+        return res.json(swaggerSpec);
+    }
+
+    // Handle the main API endpoint
+    if (pathname === '/app') {
+        const { appid, country, lang } = req.query;
+
+        // Validate required parameter
+        if (!appid) {
+            return res.status(400).json({ error: 'Missing required parameter: appid' });
+        }
+
+        const options = {
+            num: 30,
+            sort: gplay.sort.NEWEST,
+            appId: appid,
+        };
+
+        if (country) options.country = country;
+        if (lang) {
+            options.lang = lang;
+
+            try {
+                const reviews = await gplay.reviews(options);
+                return res.json(reviews.data);
+            } catch (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Failed to fetch reviews' });
+            }
+
+        }
+
+       /* const filePath = 'languages.json';// path.join(__dirname, 'api', 'languages.json');
+        const rawData = fs.readFileSync(filePath, 'utf8');
+        var langs = JSON.parse(rawData);*/
+
+        const fetchPromises = languages.map(async (l) => {
+            const langOptions = { ...options, lang: l.code };
+            try {
+                const result = await gplay.reviews(langOptions);
+                return result.data || [];
+            } catch (err) {
+                console.error(`Error fetching reviews for ${l.code}:`, err.message);
+                return [];
+            }
         });
 
-        // Sort by newest date
-        allReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
-        console.log(`Filter ${allReviews.length} reviews`);
-        const reviews = {
-            data: allReviews
-        };
-        res.json(reviews);
-    } catch (err) {
-        console.error('Error during parallel fetching:', err);
-        res.status(500).json({ error: 'Failed to fetch reviews' });
+        try {
+            const results = await Promise.all(fetchPromises);
+            let allReviews = results.flat();
+                    console.log(`Take ${allReviews.length} reviews`);
+            const seen = new Set();
+            allReviews = allReviews.filter(review => {
+                if (!seen.has(review.id)) {
+                    seen.add(review.id);
+                    return true;
+                }
+                return false;
+            });
+
+            // Sort by newest date
+            allReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+            console.log(`Filter ${allReviews.length} reviews`);
+            const reviews = {
+                data: allReviews
+            };
+            res.json(reviews);
+        } catch (err) {
+            console.error('Error during parallel fetching:', err);
+            res.status(500).json({ error: 'Failed to fetch reviews' });
+        }
     }
+
+    // Default response for unknown routes
+    res.status(404).json({ error: 'Route not found' });
 };
 
 const languages = [
