@@ -62,16 +62,20 @@ app.get('/swagger.json', (req, res) => {
                 "url": "https://github.com/remotenode/vercel-google-reviews"
             }
         },
-        "servers": [
-            {
-                "url": "https://google-reviews-9jxjwigrp-artsyomavanesov-gmailcoms-projects.vercel.app",
-                "description": "Production server"
-            },
-            {
-                "url": "http://localhost:3000",
-                "description": "Development server"
-            }
-        ],
+                    "servers": [
+                {
+                    "url": "https://android.reviews.aso.market",
+                    "description": "Production server (Custom domain)"
+                },
+                {
+                    "url": "https://google-reviews-9jxjwigrp-artsyomavanesov-gmailcoms-projects.vercel.app",
+                    "description": "Production server (Vercel domain)"
+                },
+                {
+                    "url": "http://localhost:3000",
+                    "description": "Development server"
+                }
+            ],
         "paths": {
             "/app": {
                 "get": {

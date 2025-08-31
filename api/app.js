@@ -65,8 +65,12 @@ export default async (req, res) => {
             },
             "servers": [
                 {
+                    "url": "https://android.reviews.aso.market",
+                    "description": "Production server (Custom domain)"
+                },
+                {
                     "url": "https://google-reviews-9jxjwigrp-artsyomavanesov-gmailcoms-projects.vercel.app",
-                    "description": "Production server"
+                    "description": "Production server (Vercel domain)"
                 }
             ],
             "paths": {
