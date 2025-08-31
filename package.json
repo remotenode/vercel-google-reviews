@@ -1,0 +1,20 @@
+{
+  "name": "vercel-app",
+  "version": "1.0.0",
+  "main": "api/app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vercel dev",
+    "build": "echo 'No custom build needed for serverless functions'",
+    "deploy": "vercel deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "google-play-scraper": "^10.0.1"
+  }
+}
