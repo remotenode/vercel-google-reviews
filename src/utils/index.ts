@@ -44,7 +44,7 @@ export function validateReviewOptions(options: Partial<ReviewOptions>): string[]
     errors.push('appId is required');
   }
   
-  if (options.num && (options.num < 1 || options.num > 100)) {
+  if (options.num !== undefined && (options.num < 1 || options.num > 100)) {
     errors.push('num must be between 1 and 100');
   }
   
