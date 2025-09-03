@@ -109,29 +109,64 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
       if (result?.data && Array.isArray(result.data)) {
         console.log(`✅ Successfully fetched ${result.data.length} reviews`);
         
-        // Transform reviews to our API format
+        // Transform reviews to our API format with enhanced data extraction
         let transformedReviews = result.data.map((review: any, index: number) => {
-          const uniqueId = `${review.reviewId || review.id || `gp-${index}`}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          const reviewId = review.reviewId || review.id || uniqueId;
-          const url = `https://play.google.com/store/apps/details?id=${appid}&reviewId=${reviewId}`;
+          // Try to get real review ID first, fallback to generated ID
+          const realReviewId = review.reviewId || review.id;
+          const uniqueId = realReviewId || `gp-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           
-          return {
+          // Construct Google Play Store URL with real review ID when available
+          const url = `https://play.google.com/store/apps/details?id=${appid}&reviewId=${realReviewId || uniqueId}`;
+          
+          // Enhanced data extraction with fallbacks
+          const extractedReview = {
             id: uniqueId,
             userName: review.userName || review.author || 'Anonymous User',
-            userImage: null,
-            date: review.date || review.time || new Date().toISOString(),
-            score: review.score || review.rating || 3,
-            scoreText: String(review.score || review.rating || 3),
+            userImage: review.userImage || review.profileImage || null, // Try to get real user image
+            date: review.date || review.time || review.timestamp || new Date().toISOString(),
+            score: review.score || review.rating || review.stars || 3,
+            scoreText: String(review.score || review.rating || review.stars || 3),
             url: url,
-            title: null,
-            text: review.text || review.body || 'No review text available',
-            replyDate: null,
-            replyText: null,
-            version: review.appVersion || 'Unknown',
-            thumbsUp: null,
-            criterias: []
+            title: review.title || review.headline || null, // Try to get real title
+            text: review.text || review.body || review.content || review.comment || 'No review text available',
+            replyDate: review.replyDate || review.reply?.date || review.replyDate || null, // Try to get reply date
+            replyText: review.replyText || review.reply?.text || review.replyText || null, // Try to get reply text
+            version: review.appVersion || review.version || review.app_version || 'Unknown', // Better version detection
+            thumbsUp: review.thumbsUp || null, // Individual thumbsUp field
+            likes: review.likes || null, // Individual likes field
+            helpful: review.helpful || null, // Individual helpful field
+            positive: review.positive || null, // Individual positive field
+            thumbsDown: review.thumbsDown || null, // Individual thumbsDown field
+            dislikes: review.dislikes || null, // Individual dislikes field
+            unhelpful: review.unhelpful || null, // Individual unhelpful field
+            negative: review.negative || null, // Individual negative field
+            criterias: review.criterias || review.criteria || review.tags || [] // Try to get criteria/tags if available
           };
+          
+          // Clean and validate the extracted data
+          return cleanReviewData(extractedReview);
         });
+        
+        // Log enhanced data extraction summary
+        const enhancedDataSummary = {
+          totalReviews: transformedReviews.length,
+          withRealIds: transformedReviews.filter((r: any) => !r.id.startsWith('gp-')).length,
+          withUserImages: transformedReviews.filter((r: any) => r.userImage !== null).length,
+          withTitles: transformedReviews.filter((r: any) => r.title !== null).length,
+          withReplyData: transformedReviews.filter((r: any) => r.replyDate !== null || r.replyText !== null).length,
+          withThumbsUp: transformedReviews.filter((r: any) => r.thumbsUp !== null).length,
+          withLikes: transformedReviews.filter((r: any) => r.likes !== null).length,
+          withHelpful: transformedReviews.filter((r: any) => r.helpful !== null).length,
+          withPositive: transformedReviews.filter((r: any) => r.positive !== null).length,
+          withThumbsDown: transformedReviews.filter((r: any) => r.thumbsDown !== null).length,
+          withDislikes: transformedReviews.filter((r: any) => r.dislikes !== null).length,
+          withUnhelpful: transformedReviews.filter((r: any) => r.unhelpful !== null).length,
+          withNegative: transformedReviews.filter((r: any) => r.negative !== null).length,
+          withCriteria: transformedReviews.filter((r: any) => r.criterias.length > 0).length,
+          withBetterVersions: transformedReviews.filter((r: any) => r.version !== 'Unknown').length
+        };
+        
+        console.log('🔍 Enhanced data extraction summary:', enhancedDataSummary);
         
         // Apply date filtering if specified
         if (targetDate) {
@@ -191,6 +226,63 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
       timestamp: new Date().toISOString(),
     });
   }
+}
+
+/**
+ * Clean and validate extracted review data
+ */
+function cleanReviewData(review: any): any {
+  // Clean and validate text fields
+  const cleanText = (text: string | null): string | null => {
+    if (!text || typeof text !== 'string') return null;
+    const cleaned = text.trim();
+    return cleaned.length > 0 ? cleaned : null;
+  };
+
+  // Clean and validate date fields
+  const cleanDate = (date: string | null): string | null => {
+    if (!date) return null;
+    try {
+      const parsed = new Date(date);
+      return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    } catch {
+      return null;
+    }
+  };
+
+  // Clean and validate numeric fields
+  const cleanNumber = (num: any, min: number = 0, max: number = 5): number | null => {
+    if (num === null || num === undefined) return null;
+    const parsed = Number(num);
+    return isNaN(parsed) ? null : Math.max(min, Math.min(max, parsed));
+  };
+
+  // Clean and validate array fields
+  const cleanArray = (arr: any): string[] => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter(item => item && typeof item === 'string' && item.trim().length > 0)
+      .map(item => item.trim());
+  };
+
+  return {
+    ...review,
+    text: cleanText(review.text),
+    title: cleanText(review.title),
+    replyText: cleanText(review.replyText),
+    date: cleanDate(review.date),
+    replyDate: cleanDate(review.replyDate),
+    score: cleanNumber(review.score, 1, 5),
+    thumbsUp: cleanNumber(review.thumbsUp, 0),
+    likes: cleanNumber(review.likes, 0),
+    helpful: cleanNumber(review.helpful, 0),
+    positive: cleanNumber(review.positive, 0),
+    thumbsDown: cleanNumber(review.thumbsDown, 0),
+    dislikes: cleanNumber(review.dislikes, 0),
+    unhelpful: cleanNumber(review.unhelpful, 0),
+    negative: cleanNumber(review.negative, 0),
+    criterias: cleanArray(review.criterias)
+  };
 }
 
 /**
