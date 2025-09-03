@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-09-03T09:28:13.803Z",
+  "endpoint": "https://vercel-app-nine-dusky.vercel.app/api/app?country=vn&appid=com.iqoption",
+  "totalRequests": 10,
+  "successfulRequests": 10,
+  "failedRequests": 0,
+  "averageResponseTime": 3511.1,
+  "responseTimes": [
+    3761,
+    2721,
+    2581,
+    2708,
+    7095,
+    3508,
+    3111,
+    3256,
+    3138,
+    3232
+  ],
+  "statusCodes": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+  ]
+}
