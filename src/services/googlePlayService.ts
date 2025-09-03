@@ -1,205 +1,201 @@
-import * as gplay from 'google-play-scraper';
-import { Review, ReviewOptions } from '../types';
-import { SUPPORTED_LANGUAGES, API_CONFIG } from '../constants';
-import { removeDuplicateReviews, sortReviewsByDate, delay, retryWithBackoff } from '../utils';
+import { Review, GooglePlayReview, ScraperOptions } from '../types/index.js';
 
-/**
- * Service for interacting with Google Play Store
- */
 export class GooglePlayService {
-  /**
-   * Convert Google Play scraper review to our Review type
-   */
-  private convertToReviewType(scraperReview: any): Review {
-    return {
-      id: scraperReview.id,
-      userName: scraperReview.userName,
-      userImage: scraperReview.userImage,
-      content: scraperReview.text || scraperReview.content,
-      text: scraperReview.text,
-      score: scraperReview.score,
-      thumbsUpCount: scraperReview.thumbsUp || scraperReview.thumbsUpCount,
-      thumbsUp: scraperReview.thumbsUp,
-      reviewCreatedVersion: scraperReview.reviewCreatedVersion || scraperReview.version,
-      version: scraperReview.version,
-      at: scraperReview.at || scraperReview.date,
-      date: scraperReview.date,
-      replyContent: scraperReview.replyContent,
-      repliedAt: scraperReview.repliedAt || scraperReview.replyDate,
-      replyDate: scraperReview.replyDate,
-      replyText: scraperReview.replyText,
-      scoreText: scraperReview.scoreText,
-      url: scraperReview.url,
-      title: scraperReview.title,
-      criterias: scraperReview.criterias,
-    };
-  }
+  private static readonly SUPPORTED_LANGUAGES = [
+    'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'hi', 'th', 'vi'
+  ];
 
   /**
-   * Fetch reviews for a specific app
+   * Fetch reviews from Google Play Store
    */
-  async fetchReviews(options: ReviewOptions): Promise<Review[]> {
+  static async fetchReviews(
+    appId: string, 
+    country: string, 
+    language: string
+  ): Promise<Review[]> {
     try {
-      // If specific language is requested, fetch only that language
-      if (options.lang) {
-        return await this.fetchReviewsForLanguage(options);
+      console.log(`🚀 GooglePlayService.fetchReviews called with: appId=${appId}, country=${country}, language=${language}`);
+      
+      // Dynamically import google-play-scraper - use the same pattern as the working test
+      console.log('📦 Importing google-play-scraper...');
+      const gplay = await import('google-play-scraper');
+      console.log('✅ google-play-scraper imported successfully');
+      console.log('🔍 gplay object keys:', Object.keys(gplay));
+      console.log('🔍 gplay type:', typeof gplay);
+      
+      let allReviews: GooglePlayReview[] = [];
+      
+      // If no specific language is specified, fetch reviews for multiple languages
+      if (!language || language === 'all') {
+        console.log('🌍 Fetching reviews for multiple languages...');
+        allReviews = await this.fetchMultiLanguageReviews(gplay, appId, country);
+      } else {
+        console.log(`🌍 Fetching reviews for single language: ${language}`);
+        allReviews = await this.fetchSingleLanguageReviews(gplay, appId, country, language);
       }
 
-      // Fetch reviews in all supported languages
-      return await this.fetchReviewsInAllLanguages(options);
+      console.log(`📊 Total reviews fetched: ${allReviews.length}`);
+
+      // Transform and return reviews
+      const transformedReviews = this.transformReviews(allReviews, country, language, appId);
+      console.log(`🔄 Transformed ${transformedReviews.length} reviews`);
+      
+      return transformedReviews;
+      
     } catch (error) {
-      console.error('Error fetching reviews:', error);
-      throw new Error('Failed to fetch reviews from Google Play Store');
-    }
-  }
-
-  /**
-   * Fetch reviews for a specific language
-   */
-  private async fetchReviewsForLanguage(options: ReviewOptions): Promise<Review[]> {
-    const reviewOptions: any = {
-      num: options.num || API_CONFIG.DEFAULT_REVIEW_COUNT,
-      sort: gplay.sort.NEWEST,
-      appId: options.appId,
-    };
-
-    if (options.country) reviewOptions.country = options.country;
-    if (options.lang) reviewOptions.lang = options.lang;
-
-    try {
-      const result = await retryWithBackoff(async () => {
-        return await gplay.reviews(reviewOptions);
-      });
-
-      return (result.data || []).map(review => this.convertToReviewType(review));
-    } catch (error) {
-      console.error(`Error fetching reviews for language ${options.lang}:`, (error as Error).message);
+      console.error('💥 Error in GooglePlayService.fetchReviews:', error);
+      console.error('💥 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('💥 Error message:', error instanceof Error ? error.message : 'No message');
       throw error;
     }
   }
 
   /**
-   * Fetch reviews in all supported languages
+   * Fetch reviews for multiple languages
    */
-  private async fetchReviewsInAllLanguages(options: ReviewOptions): Promise<Review[]> {
-    const baseOptions = {
-      num: options.num || API_CONFIG.DEFAULT_REVIEW_COUNT,
-      sort: gplay.sort.NEWEST,
-      appId: options.appId,
-      country: options.country,
-    };
-
-    // Create promises for all language requests
-    const fetchPromises = SUPPORTED_LANGUAGES.map(async (language) => {
-      const langOptions: any = { ...baseOptions, lang: language.code };
-      
+  private static async fetchMultiLanguageReviews(
+    gplay: any, 
+    appId: string, 
+    country: string
+  ): Promise<GooglePlayReview[]> {
+    const allReviews: GooglePlayReview[] = [];
+    
+    console.log(`🌍 Starting multi-language fetch for ${this.SUPPORTED_LANGUAGES.length} languages`);
+    
+    for (const lang of this.SUPPORTED_LANGUAGES) {
       try {
-        const result = await retryWithBackoff(async () => {
-          return await gplay.reviews(langOptions);
-        });
-
-        return (result.data || []).map(review => this.convertToReviewType(review));
-      } catch (error) {
-        console.error(`Error fetching reviews for ${language.code}:`, (error as Error).message);
-        return [];
+        console.log(`🌍 Fetching for language: ${lang}`);
+        const options: ScraperOptions = {
+          appId,
+          num: 500, // Always fetch up to 500 per language
+          country: country || 'US',
+          lang
+        };
+        
+        console.log(`🔧 Scraper options for ${lang}:`, JSON.stringify(options));
+        console.log(`📡 Calling gplay.reviews for ${lang}...`);
+        
+        // Use the exact same pattern as the working test endpoint
+        const result = await gplay.reviews(options);
+        
+        console.log(`📊 Result for ${lang}:`, typeof result, result ? Object.keys(result) : 'null/undefined');
+        
+        if (result?.data && Array.isArray(result.data)) {
+          const langReviews = result.data.map((review: GooglePlayReview) => ({
+            ...review,
+            language: lang,
+            reviewId: `${lang}-${review.reviewId || review.id || Math.random().toString(36).substr(2, 9)}`
+          }));
+          allReviews.push(...langReviews);
+          console.log(`✅ Added ${langReviews.length} reviews for ${lang}`);
+        } else {
+          console.log(`⚠️ No valid data for ${lang}, result:`, result);
+        }
+        
+        // Add small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (langError) {
+        console.error(`💥 Failed to fetch reviews for language ${lang}:`, langError);
+        console.error(`💥 Error stack for ${lang}:`, langError instanceof Error ? langError.stack : 'No stack trace');
+        continue; // Continue with next language
       }
-    });
+    }
+    
+    console.log(`📊 Total reviews from multi-language fetch: ${allReviews.length}`);
+    return allReviews;
+  }
 
-    try {
-      // Execute all requests in parallel
-      const results = await Promise.all(fetchPromises);
+  /**
+   * Fetch reviews for a single language
+   */
+  private static async fetchSingleLanguageReviews(
+    gplay: any, 
+    appId: string, 
+    country: string, 
+    language: string
+  ): Promise<GooglePlayReview[]> {
+    console.log(`🌍 Starting single language fetch for: ${language}`);
+    
+    const options: ScraperOptions = {
+      appId,
+      num: 500, // Always fetch up to 500 for single language
+      country: country || 'US',
+      lang: language
+    };
+    
+    console.log('🔧 Scraper options:', JSON.stringify(options));
+    console.log('📡 Calling gplay.reviews...');
+    
+    // Use the exact same pattern as the working test endpoint
+    const result = await gplay.reviews(options);
+    
+    console.log('📊 Result received:', typeof result, result ? Object.keys(result) : 'null/undefined');
+    
+    if (!result || typeof result !== 'object') {
+      throw new Error('Invalid response from Google Play Store');
+    }
+    
+    // Extract reviews from response - use the correct structure
+    let reviews: GooglePlayReview[] = [];
+    
+    if (result.data && Array.isArray(result.data)) {
+      reviews = result.data;
+      console.log(`✅ Found reviews in result.data: ${reviews.length}`);
+    } else {
+      console.log('❌ No reviews found in response');
+      console.log('🔍 Full result object:', JSON.stringify(result, null, 2));
+      throw new Error('No reviews found in response');
+    }
+    
+    if (reviews.length === 0) {
+      console.log('❌ No reviews found in response');
+      console.log('🔍 Full result object:', JSON.stringify(result, null, 2));
+      throw new Error('No reviews found in response');
+    }
+    
+    console.log(`✅ Successfully extracted ${reviews.length} reviews`);
+    return reviews;
+  }
+
+  /**
+   * Transform Google Play reviews to our API format
+   */
+  private static transformReviews(
+    reviews: GooglePlayReview[], 
+    country: string, 
+    language: string,
+    appId: string
+  ): Review[] {
+    console.log(`🔄 Transforming ${reviews.length} reviews...`);
+    
+    const transformed = reviews.map((review, index) => {
+      // Generate a simple unique ID (since we don't have UUID library)
+      const uniqueId = `${review.reviewId || review.id || `gp-${index}`}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      // Flatten and process results
-      let allReviews = results.flat();
-      console.log(`Fetched ${allReviews.length} total reviews from all languages`);
-
-      // Remove duplicates and sort
-      allReviews = removeDuplicateReviews(allReviews);
-      console.log(`After deduplication: ${allReviews.length} reviews`);
-
-      allReviews = sortReviewsByDate(allReviews);
-      console.log(`Final review count: ${allReviews.length}`);
-
-      return allReviews;
-    } catch (error) {
-      console.error('Error during parallel fetching:', error);
-      throw new Error('Failed to fetch reviews from multiple languages');
-    }
-  }
-
-  /**
-   * Fetch app information
-   */
-  async fetchAppInfo(appId: string): Promise<any> {
-    try {
-      return await retryWithBackoff(async () => {
-        return await gplay.app({ appId });
-      });
-    } catch (error) {
-      console.error(`Error fetching app info for ${appId}:`, error);
-      throw new Error('Failed to fetch app information');
-    }
-  }
-
-  /**
-   * Search for apps
-   */
-  async searchApps(query: string, limit: number = 20): Promise<any[]> {
-    try {
-      return await retryWithBackoff(async () => {
-        return await gplay.search({
-          term: query,
-          num: limit,
-        });
-      });
-    } catch (error) {
-      console.error(`Error searching for apps with query "${query}":`, error);
-      throw new Error('Failed to search for apps');
-    }
-  }
-
-  /**
-   * Get app suggestions
-   */
-  async getAppSuggestions(query: string): Promise<string[]> {
-    try {
-      return await retryWithBackoff(async () => {
-        return await gplay.suggest({ term: query });
-      });
-    } catch (error) {
-      console.error(`Error getting suggestions for "${query}":`, error);
-      throw new Error('Failed to get app suggestions');
-    }
-  }
-
-  /**
-   * Get app permissions
-   */
-  async getAppPermissions(appId: string): Promise<any> {
-    try {
-      return await retryWithBackoff(async () => {
-        return await gplay.permissions({ appId });
-      });
-    } catch (error) {
-      console.error(`Error fetching permissions for ${appId}:`, error);
-      throw new Error('Failed to fetch app permissions');
-    }
-  }
-
-  /**
-   * Get app developer
-   */
-  async getAppDeveloper(developerId: string): Promise<any> {
-    try {
-      return await retryWithBackoff(async () => {
-        return await gplay.developer({ devId: developerId });
-      });
-    } catch (error) {
-      console.error(`Error fetching developer info for ${developerId}:`, error);
-      throw new Error('Failed to fetch developer information');
-    }
+      // Construct Google Play Store URL
+      const reviewId = review.reviewId || review.id || uniqueId;
+      const url = `https://play.google.com/store/apps/details?id=${appId}&reviewId=${reviewId}`;
+      
+      return {
+        id: uniqueId,
+        userName: review.userName || review.author || 'Anonymous User',
+        userImage: null, // Not available from Google Play Store
+        date: review.date || review.time || new Date().toISOString(),
+        score: review.score || review.rating || 3,
+        scoreText: String(review.score || review.rating || 3),
+        url: url,
+        title: null, // Not available from Google Play Store
+        text: review.text || review.body || 'No review text available',
+        replyDate: null, // Not available from Google Play Store
+        replyText: null, // Not available from Google Play Store
+        version: review.appVersion || 'Unknown',
+        thumbsUp: null, // Not available from Google Play Store
+        criterias: [] // Empty array as not available
+      };
+    });
+    
+    console.log(`✅ Transformation complete: ${transformed.length} reviews`);
+    return transformed;
   }
 }
-
-// Export singleton instance
-export const googlePlayService = new GooglePlayService();

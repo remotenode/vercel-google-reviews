@@ -1,24 +1,19 @@
 # 🧪 Testing Infrastructure & Results
 
 ## Overview
-This document summarizes the comprehensive testing infrastructure created for the Google Reviews API, including the specific endpoint test requested: `vn&appid=com.iqoption`.
+This document summarizes the simplified testing infrastructure for the Google Reviews API, focusing on integration tests for the specific endpoint: `vn&appid=com.iqoption`.
 
 ## 🏗️ Testing Architecture
 
-### 1. Unit Tests (`tests/` directory)
-- **`utils.test.ts`** - Tests utility functions (validation, data processing, performance monitoring)
-- **`services.test.ts`** - Tests service layer (GooglePlayService, SwaggerService)
-- **`integration.test.ts`** - Full API integration tests
-- **`test-specific-endpoint.test.ts`** - Focused tests for specific endpoints
+### 1. Integration Tests (`tests/` directory)
+- **`integration.test.ts`** - Full API integration tests covering all endpoints
 
 ### 2. Test Configuration
 - **`jest.config.cjs`** - Jest configuration for TypeScript testing
-- **`tests/setup.ts`** - Global test setup and utilities
 - **`package.json`** - Testing scripts and dependencies
 
 ### 3. Simple Test Scripts
 - **`test-endpoint.js`** - Simple Node.js script for testing specific endpoints
-- **`tests/test-api-endpoints.js`** - Comprehensive API endpoint testing
 
 ## 🎯 Target Endpoint Test Results
 
@@ -61,7 +56,7 @@ This document summarizes the comprehensive testing infrastructure created for th
 
 ## 🚀 Running Tests
 
-### 1. Unit Tests with Jest
+### 1. Integration Tests with Jest
 ```bash
 # Run all tests
 npm test
@@ -71,21 +66,21 @@ npm run test:watch
 
 # Run tests with coverage
 npm run test:coverage
+
+# Run only integration tests
+npm run test:integration
 ```
 
 ### 2. Simple Endpoint Testing
 ```bash
 # Test specific endpoint (vn&appid=com.iqoption)
 node test-endpoint.js
-
-# Test all API endpoints
-npm run test:api
 ```
 
 ### 3. Manual Testing
 ```bash
 # Test the specific endpoint directly
-curl "https://android.reviews.aso.market/app?appid=com.iqoption&country=vn&lang=vi&num=10"
+curl "https://android.reviews.aso.market?appid=com.iqoption&country=vn&lang=vi&num=10"
 
 # Test health endpoint
 curl "https://android.reviews.aso.market/health"
@@ -106,15 +101,12 @@ curl "https://android.reviews.aso.market/health"
 ## 🔍 Test Coverage
 
 ### What's Tested
-1. **Utility Functions** - Data processing, validation, performance monitoring
-2. **Service Layer** - Google Play scraping, Swagger documentation
-3. **API Endpoints** - All major endpoints including the specific requested endpoint
-4. **Error Handling** - Missing parameters, invalid data, edge cases
-5. **Performance** - Response times, concurrent requests, data validation
-6. **Data Quality** - Review structure, content validation, language support
+1. **API Endpoints** - All major endpoints including the specific requested endpoint
+2. **Error Handling** - Missing parameters, invalid data, edge cases
+3. **Performance** - Response times, concurrent requests, data validation
+4. **Data Quality** - Review structure, content validation, language support
 
 ### Test Categories
-- ✅ **Unit Tests** - Individual function testing
 - ✅ **Integration Tests** - Full API flow testing
 - ✅ **Performance Tests** - Response time and reliability
 - ✅ **Data Quality Tests** - Content validation and structure
@@ -168,11 +160,11 @@ npm run build
 vercel --prod
 ```
 
-### 2. **Run Full Test Suite**
+### 2. **Run Integration Tests**
 ```bash
 # After deployment, run comprehensive tests
 npm test
-npm run test:api
+npm run test:integration
 ```
 
 ### 3. **Monitor Performance**
@@ -188,25 +180,24 @@ npm run test:api
 node test-endpoint.js
 ```
 
-### Comprehensive Testing
+### Integration Testing
 ```bash
 # Run all Jest tests
 npm test
 
-# Run specific test files
-npm test -- tests/utils.test.ts
-npm test -- tests/services.test.ts
+# Run only integration tests
+npm run test:integration
 ```
 
 ## 🎉 Conclusion
 
-The testing infrastructure is **comprehensive and functional**. The specific endpoint `vn&appid=com.iqoption` is working correctly on the custom domain, returning real Vietnamese reviews with excellent performance.
+The testing infrastructure is **streamlined and focused on integration testing**. The specific endpoint `vn&appid=com.iqoption` is working correctly on the custom domain, returning real Vietnamese reviews with excellent performance.
 
 **Key Success Metrics:**
 - ✅ **Endpoint Working**: 200 status, 399ms response time
 - ✅ **Data Quality**: 25+ real Vietnamese reviews
 - ✅ **Language Support**: Full Vietnamese language support
 - ✅ **Performance**: Excellent response times
-- ✅ **Infrastructure**: Robust testing framework
+- ✅ **Infrastructure**: Focused integration testing framework
 
 The API is ready for production use with the custom domain `https://android.reviews.aso.market`.

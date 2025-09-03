@@ -1,222 +1,87 @@
-import { Request, Response } from 'express';
-import { googlePlayService } from '../services/googlePlayService';
-import { buildReviewOptions, validateReviewOptions } from '../utils';
-import { startPerformanceMeasurement, endPerformanceMeasurement, formatPerformanceMetrics } from '../utils';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../constants';
-import { ReviewResponse, ApiResponse } from '../types';
+import { VercelRequest, VercelResponse } from '@vercel/node';
+import { GooglePlayService } from '../services/googlePlayService.js';
+import { ApiResponse, Review } from '../types/index.js';
 
-/**
- * Controller for handling review-related API endpoints
- */
 export class ReviewsController {
   /**
-   * Get reviews for a specific app
+   * Handle get reviews request
    */
-  async getReviews(req: Request, res: Response): Promise<void> {
-    const metrics = startPerformanceMeasurement();
-    
+  static async getReviews(req: VercelRequest, res: VercelResponse): Promise<void> {
     try {
       const { appid, country, lang } = req.query;
-      
+
       // Validate required parameters
-      if (!appid || typeof appid !== 'string') {
-        const errorResponse: ApiResponse<null> = {
-          success: false,
-          error: ERROR_MESSAGES.MISSING_APP_ID,
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-          timestamp: new Date().toISOString(),
-        };
-        
-        res.status(HTTP_STATUS.BAD_REQUEST).json(errorResponse);
-        return;
-      }
-
-      // Build and validate options
-      const options = buildReviewOptions(appid, country as string, lang as string);
-      const validationErrors = validateReviewOptions(options);
-      
-      if (validationErrors.length > 0) {
-        const errorResponse: ApiResponse<null> = {
-          success: false,
-          error: validationErrors.join(', '),
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-          timestamp: new Date().toISOString(),
-        };
-        
-        res.status(HTTP_STATUS.BAD_REQUEST).json(errorResponse);
-        return;
-      }
-
-      // Fetch reviews
-      const reviews = await googlePlayService.fetchReviews(options);
-      
-      // Prepare response
-      const reviewResponse: ReviewResponse = {
-        data: reviews,
-      };
-
-      const successResponse: ApiResponse<ReviewResponse> = {
-        success: true,
-        data: reviewResponse,
-        statusCode: HTTP_STATUS.OK,
-        timestamp: new Date().toISOString(),
-      };
-
-      // Log performance metrics
-      endPerformanceMeasurement(metrics);
-      console.log(`Reviews fetched successfully: ${formatPerformanceMetrics(metrics)}`);
-      console.log(`App ID: ${appid}, Country: ${country || 'all'}, Language: ${lang || 'all'}, Reviews: ${reviews.length}`);
-
-      res.status(HTTP_STATUS.OK).json(successResponse);
-      
-    } catch (error) {
-      endPerformanceMeasurement(metrics);
-      console.error('Error in getReviews:', error);
-      
-      const errorResponse: ApiResponse<null> = {
-        success: false,
-        error: ERROR_MESSAGES.FETCH_FAILED,
-        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        timestamp: new Date().toISOString(),
-      };
-      
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(errorResponse);
-    }
-  }
-
-  /**
-   * Get app information
-   */
-  async getAppInfo(req: Request, res: Response): Promise<void> {
-    try {
-      const { appid } = req.query;
-      
-      if (!appid || typeof appid !== 'string') {
+      if (!appid) {
         const errorResponse: ApiResponse<null> = {
           success: false,
           error: 'Missing required parameter: appid',
-          statusCode: HTTP_STATUS.BAD_REQUEST,
+          statusCode: 400,
           timestamp: new Date().toISOString(),
         };
-        
-        res.status(HTTP_STATUS.BAD_REQUEST).json(errorResponse);
-        return;
+        return res.status(400).json(errorResponse);
       }
 
-      const appInfo = await googlePlayService.fetchAppInfo(appid);
-      
-      const successResponse: ApiResponse<any> = {
-        success: true,
-        data: appInfo,
-        statusCode: HTTP_STATUS.OK,
-        timestamp: new Date().toISOString(),
-      };
+      // Set default values: always fetch up to 500 reviews per language
+      const targetCountry = (Array.isArray(country) ? country[0] : country) || 'US';
+      const targetLanguage = (Array.isArray(lang) ? lang[0] : lang) || 'all';
 
-      res.status(HTTP_STATUS.OK).json(successResponse);
-      
-    } catch (error) {
-      console.error('Error in getAppInfo:', error);
-      
-      const errorResponse: ApiResponse<null> = {
-        success: false,
-        error: 'Failed to fetch app information',
-        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        timestamp: new Date().toISOString(),
-      };
-      
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(errorResponse);
-    }
-  }
+      // Fetch real reviews from Google Play Store
+      console.log(`Fetching real reviews from Google Play Store for app: ${appid}, country: ${targetCountry}, lang: ${targetLanguage}`);
 
-  /**
-   * Search for apps
-   */
-  async searchApps(req: Request, res: Response): Promise<void> {
-    try {
-      const { q, limit } = req.query;
-      
-      if (!q || typeof q !== 'string') {
+      try {
+        const reviews = await GooglePlayService.fetchReviews(
+          appid as string, 
+          targetCountry, 
+          targetLanguage
+        );
+
+        if (reviews.length === 0) {
+          const errorResponse: ApiResponse<null> = {
+            success: false,
+            error: 'No reviews found for this app',
+            statusCode: 404,
+            timestamp: new Date().toISOString(),
+            details: 'The app may not have any reviews or the app ID may be incorrect.'
+          };
+          return res.status(404).json(errorResponse);
+        }
+
+        console.log(`Successfully fetched ${reviews.length} real reviews from Google Play Store for ${appid}`);
+        
+        // Return reviews wrapped in data array for new format
+        return res.status(200).json({
+          data: reviews
+        });
+
+      } catch (fetchError) {
+        console.error('Error fetching real reviews from Google Play Store:', fetchError);
+
+        // Provide more detailed error information
+        const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error occurred';
+        
         const errorResponse: ApiResponse<null> = {
           success: false,
-          error: 'Missing required parameter: q (search query)',
-          statusCode: HTTP_STATUS.BAD_REQUEST,
+          error: 'Unable to fetch real reviews from Google Play Store at this time. Please try again later.',
+          statusCode: 503,
           timestamp: new Date().toISOString(),
+          details: `Error details: ${errorMessage}. This may be due to Vercel serverless limitations or Google Play Store restrictions.`,
+          recommendation: 'Consider using a traditional server deployment for better compatibility with google-play-scraper.'
         };
         
-        res.status(HTTP_STATUS.BAD_REQUEST).json(errorResponse);
-        return;
+        return res.status(503).json(errorResponse);
       }
 
-      const searchLimit = limit ? parseInt(limit as string, 10) : 20;
-      const apps = await googlePlayService.searchApps(q, searchLimit);
-      
-      const successResponse: ApiResponse<any[]> = {
-        success: true,
-        data: apps,
-        statusCode: HTTP_STATUS.OK,
-        timestamp: new Date().toISOString(),
-      };
-
-      res.status(HTTP_STATUS.OK).json(successResponse);
-      
     } catch (error) {
-      console.error('Error in searchApps:', error);
+      console.error('Error handling reviews request:', error);
       
       const errorResponse: ApiResponse<null> = {
         success: false,
-        error: 'Failed to search for apps',
-        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        error: 'Failed to fetch reviews',
+        statusCode: 500,
         timestamp: new Date().toISOString(),
       };
       
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(errorResponse);
-    }
-  }
-
-  /**
-   * Get app suggestions
-   */
-  async getAppSuggestions(req: Request, res: Response): Promise<void> {
-    try {
-      const { q } = req.query;
-      
-      if (!q || typeof q !== 'string') {
-        const errorResponse: ApiResponse<null> = {
-          success: false,
-          error: 'Missing required parameter: q (search query)',
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-          timestamp: new Date().toISOString(),
-        };
-        
-        res.status(HTTP_STATUS.BAD_REQUEST).json(errorResponse);
-        return;
-      }
-
-      const suggestions = await googlePlayService.getAppSuggestions(q);
-      
-      const successResponse: ApiResponse<string[]> = {
-        success: true,
-        data: suggestions,
-        statusCode: HTTP_STATUS.OK,
-        timestamp: new Date().toISOString(),
-      };
-
-      res.status(HTTP_STATUS.OK).json(successResponse);
-      
-    } catch (error) {
-      console.error('Error in getAppSuggestions:', error);
-      
-      const errorResponse: ApiResponse<null> = {
-        success: false,
-        error: 'Failed to get app suggestions',
-        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-        timestamp: new Date().toISOString(),
-      };
-      
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(errorResponse);
+      return res.status(500).json(errorResponse);
     }
   }
 }
-
-// Export singleton instance
-export const reviewsController = new ReviewsController();
