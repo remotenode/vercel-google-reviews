@@ -2,8 +2,8 @@
  * Review fetching and transformation service
  */
 
-import { getCountryLanguages } from '../config/countryLanguages';
-import { parseDateFilter, filterReviewsByDate } from '../utils/dateUtils';
+import { getCountryLanguages } from '../config/countryLanguages.js';
+import { parseDateFilter, filterReviewsByDate } from '../utils/dateUtils.js';
 
 /**
  * Clean and validate review data

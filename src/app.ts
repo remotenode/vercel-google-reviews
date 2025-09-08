@@ -1,11 +1,11 @@
-import { VercelRequest, VercelResponse } from './types/vercel';
-import { fetchReviews } from './services/reviewService';
+import { VercelRequest, VercelResponse } from './types/vercel.js';
+import { fetchReviews } from './services/reviewService.js';
 import { 
   sendSuccessResponse, 
   sendErrorResponse, 
   sendHealthResponse, 
   sendNotFoundResponse 
-} from './utils/responseUtils';
+} from './utils/responseUtils.js';
 
 /**
  * Vercel serverless function handler

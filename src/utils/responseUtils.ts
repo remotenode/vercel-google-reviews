@@ -2,7 +2,7 @@
  * Response formatting utilities
  */
 
-import { VercelResponse } from '../types/vercel';
+import { VercelResponse } from '../types/vercel.js';
 
 /**
  * Send success response with data
