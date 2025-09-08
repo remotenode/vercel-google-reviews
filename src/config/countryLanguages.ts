@@ -1,6 +1,7 @@
 /**
  * Country to Languages Mapping Configuration
  * Each country maps to its 10 most likely used languages
+ * This is the complete mapping for all countries
  */
 
 export const countryLanguagesMap: { [key: string]: string[] } = {
@@ -169,16 +170,14 @@ export const countryLanguagesMap: { [key: string]: string[] } = {
   'GU': ['en', 'ch', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
   'MP': ['en', 'ch', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
   'VI': ['en', 'es', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it', 'pt'],
-  'PR': ['es', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it', 'pt'],
-  
-  // Default fallback for any country not in the map
-  'DEFAULT': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh']
+  'PR': ['es', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it', 'pt']
 };
 
 /**
  * Get the 10 most likely languages for a given country
  * @param country - ISO 3166-1 alpha-2 country code
  * @returns Array of 10 language codes
+ * @throws Error if country is not found in the mapping
  */
 export function getCountryLanguages(country: string): string[] {
   const upperCountry = country.toUpperCase();
@@ -186,8 +185,8 @@ export function getCountryLanguages(country: string): string[] {
   if (languages) {
     return languages;
   }
-  // Return DEFAULT languages (guaranteed to exist)
-  return ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'];
+  // Throw error if country not found
+  throw new Error(`Country '${country}' not found in language mapping. Supported countries: ${Object.keys(countryLanguagesMap).filter(key => key !== 'DEFAULT').join(', ')}`);
 }
 
 /**

@@ -1,4 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { getCountryLanguages } from './config/countryLanguages';
 
 /**
  * Vercel serverless function handler
@@ -79,53 +80,8 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
     const targetLanguage = Array.isArray(lang) ? lang[0] : lang;
     const targetDate = (Array.isArray(date) ? date[0] : date);
 
-    // Country-specific language mapping (from config/countryLanguages.ts)
-    const countryLanguageMap: { [key: string]: string[] } = {
-      'US': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'CA': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'MX': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'BR': ['pt', 'es', 'en', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
-      'AR': ['es', 'en', 'pt', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
-      'GB': ['en', 'fr', 'de', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'DE': ['de', 'en', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'FR': ['fr', 'en', 'de', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'ES': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'IT': ['it', 'en', 'fr', 'de', 'es', 'pt', 'ru', 'ja', 'ko', 'zh'],
-      'PT': ['pt', 'en', 'es', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
-      'NL': ['nl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
-      'CN': ['zh', 'en', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
-      'JP': ['ja', 'en', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
-      'KR': ['ko', 'en', 'ja', 'zh', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
-      'IN': ['hi', 'en', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'],
-      'ID': ['id', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
-      'TH': ['th', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
-      'VN': ['vi', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
-      'PH': ['tl', 'en', 'es', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it'],
-      'MY': ['ms', 'en', 'zh', 'ta', 'ja', 'ko', 'ru', 'fr', 'de', 'es'],
-      'SG': ['en', 'zh', 'ms', 'ta', 'ja', 'ko', 'ru', 'fr', 'de', 'es'],
-      'TW': ['zh', 'en', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
-      'HK': ['zh', 'en', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
-      'AU': ['en', 'zh', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
-      'NZ': ['en', 'mi', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
-      'ZA': ['en', 'af', 'zu', 'xh', 'ja', 'ko', 'zh', 'ru', 'fr', 'de'],
-      'NG': ['en', 'ha', 'yo', 'ig', 'ja', 'ko', 'zh', 'ru', 'fr', 'de'],
-      'EG': ['ar', 'en', 'fr', 'ja', 'ko', 'zh', 'ru', 'de', 'es', 'it'],
-      'TR': ['tr', 'en', 'ku', 'ar', 'ru', 'ja', 'ko', 'zh', 'fr', 'de'],
-      'RU': ['ru', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es', 'it', 'pt'],
-      'PL': ['pl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
-      'SE': ['sv', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
-      'NO': ['no', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
-      'DK': ['da', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
-      'FI': ['fi', 'en', 'sv', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja'],
-      'DEFAULT': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh']
-    };
-    
-    const supportedLanguages = countryLanguageMap[targetCountry!.toUpperCase()] || countryLanguageMap['DEFAULT'];
-    
-    // Ensure supportedLanguages is defined
-    if (!supportedLanguages) {
-      throw new Error('Failed to get supported languages for country');
-    }
+    // Get country-specific languages from config file
+    const supportedLanguages = getCountryLanguages(targetCountry!);
 
     console.log(`🎯 Target - country: ${targetCountry}, language: ${targetLanguage || 'ALL'}, date: ${targetDate}`);
     console.log(`🌍 Country-specific languages: ${supportedLanguages.join(', ')}`);
