@@ -4,6 +4,7 @@
 
 import { getCountryLanguages } from '../config/countryLanguages.js';
 import { parseDateFilter, filterReviewsByDate } from '../utils/dateUtils.js';
+// Dynamic import for Vercel compatibility
 
 /**
  * Clean and validate review data
@@ -90,12 +91,12 @@ export async function fetchReviews(
   console.log(`🎯 Target - country: ${country}, language: ${language || 'ALL'}, date: ${dateFilter}`);
   console.log(`🌍 Country-specific languages: ${supportedLanguages.join(', ')}`);
 
-  // Import google-play-scraper
+  // Import google-play-scraper dynamically
   console.log('📦 Importing google-play-scraper...');
   const gplay = await import('google-play-scraper');
   console.log('✅ Library imported successfully');
-
-  const reviewsMethod = gplay.reviews;
+  
+  const reviewsMethod = (gplay as any).default.reviews;
   let allReviews: any[] = [];
 
   if (language) {
