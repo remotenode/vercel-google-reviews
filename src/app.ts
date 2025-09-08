@@ -64,15 +64,75 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
       });
     }
 
-    // Set default values
-    const targetCountry = (Array.isArray(country) ? country[0] : country) || 'US';
-    const targetLanguage = (Array.isArray(lang) ? lang[0] : lang) || 'en';
+    if (!country) {
+      console.log('❌ Missing country parameter');
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: country',
+        statusCode: 400,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Set parameter values (no defaults)
+    const targetCountry = Array.isArray(country) ? country[0] : country;
+    const targetLanguage = Array.isArray(lang) ? lang[0] : lang;
     const targetDate = (Array.isArray(date) ? date[0] : date);
 
-    console.log(`🎯 Target - country: ${targetCountry}, language: ${targetLanguage}, date: ${targetDate}`);
+    // Country-specific language mapping (10 most likely languages per country)
+    const countryLanguageMap: { [key: string]: string[] } = {
+      // Major countries with their most likely languages
+      'US': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'CA': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'MX': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'BR': ['pt', 'es', 'en', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
+      'AR': ['es', 'en', 'pt', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
+      'GB': ['en', 'fr', 'de', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'DE': ['de', 'en', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'FR': ['fr', 'en', 'de', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'ES': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'IT': ['it', 'en', 'fr', 'de', 'es', 'pt', 'ru', 'ja', 'ko', 'zh'],
+      'PT': ['pt', 'en', 'es', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
+      'NL': ['nl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
+      'CN': ['zh', 'en', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
+      'JP': ['ja', 'en', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
+      'KR': ['ko', 'en', 'ja', 'zh', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
+      'IN': ['hi', 'en', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'],
+      'ID': ['id', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
+      'TH': ['th', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
+      'VN': ['vi', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
+      'PH': ['tl', 'en', 'es', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it'],
+      'MY': ['ms', 'en', 'zh', 'ta', 'ja', 'ko', 'ru', 'fr', 'de', 'es'],
+      'SG': ['en', 'zh', 'ms', 'ta', 'ja', 'ko', 'ru', 'fr', 'de', 'es'],
+      'TW': ['zh', 'en', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
+      'HK': ['zh', 'en', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
+      'AU': ['en', 'zh', 'ja', 'ko', 'ru', 'fr', 'de', 'es', 'it', 'pt'],
+      'NZ': ['en', 'mi', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
+      'ZA': ['en', 'af', 'zu', 'xh', 'ja', 'ko', 'zh', 'ru', 'fr', 'de'],
+      'NG': ['en', 'ha', 'yo', 'ig', 'ja', 'ko', 'zh', 'ru', 'fr', 'de'],
+      'EG': ['ar', 'en', 'fr', 'ja', 'ko', 'zh', 'ru', 'de', 'es', 'it'],
+      'TR': ['tr', 'en', 'ku', 'ar', 'ru', 'ja', 'ko', 'zh', 'fr', 'de'],
+      'RU': ['ru', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es', 'it', 'pt'],
+      'PL': ['pl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
+      'SE': ['sv', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
+      'NO': ['no', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
+      'DK': ['da', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko'],
+      'FI': ['fi', 'en', 'sv', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja'],
+      'DEFAULT': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh']
+    };
+    
+    const supportedLanguages = countryLanguageMap[targetCountry!.toUpperCase()] || countryLanguageMap['DEFAULT'];
+    
+    // Ensure supportedLanguages is defined
+    if (!supportedLanguages) {
+      throw new Error('Failed to get supported languages for country');
+    }
+
+    console.log(`🎯 Target - country: ${targetCountry}, language: ${targetLanguage || 'ALL'}, date: ${targetDate}`);
+    console.log(`🌍 Country-specific languages: ${supportedLanguages.join(', ')}`);
 
     // Fetch real reviews from Google Play Store - with correct import pattern
-    console.log(`🚀 Fetching reviews for app: ${appid}, country: ${targetCountry}, lang: ${targetLanguage}`);
+    console.log(`🚀 Fetching reviews for app: ${appid}, country: ${targetCountry}, lang: ${targetLanguage || 'COUNTRY-SPECIFIC LANGUAGES'}`);
 
     try {
       console.log('📦 Importing google-play-scraper...');
@@ -96,21 +156,54 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
         throw new Error('No reviews method found in any expected location');
       }
       
-      console.log('📡 Calling reviews method...');
-      const result = await reviewsMethod({
-        appId: appid as string,
-        num: 500,
-        country: targetCountry,
-        lang: targetLanguage
-      });
+      let allReviews: any[] = [];
       
-      console.log('📊 Result received:', typeof result, result ? Object.keys(result) : 'null/undefined');
+      if (targetLanguage) {
+        // Fetch reviews for specific language
+        console.log(`📡 Calling reviews method for language: ${targetLanguage}...`);
+        const result = await reviewsMethod({
+          appId: appid as string,
+          num: 500,
+          country: targetCountry,
+          lang: targetLanguage
+        });
+        
+        if (result?.data && Array.isArray(result.data)) {
+          allReviews = result.data;
+          console.log(`✅ Successfully fetched ${allReviews.length} reviews for language: ${targetLanguage}`);
+        }
+      } else {
+        // Fetch reviews for all supported languages
+        console.log(`📡 Fetching reviews for all ${supportedLanguages.length} supported languages...`);
+        
+        for (const language of supportedLanguages) {
+          try {
+            console.log(`📡 Fetching reviews for language: ${language}...`);
+            const result = await reviewsMethod({
+              appId: appid as string,
+              num: 500,
+              country: targetCountry,
+              lang: language
+            });
+            
+            if (result?.data && Array.isArray(result.data)) {
+              allReviews = allReviews.concat(result.data);
+              console.log(`✅ Fetched ${result.data.length} reviews for language: ${language}`);
+            }
+          } catch (langError) {
+            console.log(`⚠️ Failed to fetch reviews for language ${language}:`, langError);
+            // Continue with other languages
+          }
+        }
+        
+        console.log(`✅ Total reviews fetched from all languages: ${allReviews.length}`);
+      }
       
-      if (result?.data && Array.isArray(result.data)) {
-        console.log(`✅ Successfully fetched ${result.data.length} reviews`);
+      if (allReviews.length > 0) {
+        console.log(`✅ Successfully fetched ${allReviews.length} reviews`);
         
         // Transform reviews to our API format with enhanced data extraction
-        let transformedReviews = result.data.map((review: any, index: number) => {
+        let transformedReviews = allReviews.map((review: any, index: number) => {
           // Try to get real review ID first, fallback to generated ID
           const realReviewId = review.reviewId || review.id;
           const uniqueId = realReviewId || `gp-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -191,7 +284,6 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
         
       } else {
         console.log('❌ No reviews found in response');
-        console.log('🔍 Full result object:', JSON.stringify(result, null, 2));
         
         return res.status(404).json({
           success: false,
