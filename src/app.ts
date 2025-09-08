@@ -79,9 +79,8 @@ async function handleReviews(req: VercelRequest, res: VercelResponse): Promise<v
     const targetLanguage = Array.isArray(lang) ? lang[0] : lang;
     const targetDate = (Array.isArray(date) ? date[0] : date);
 
-    // Country-specific language mapping (10 most likely languages per country)
+    // Country-specific language mapping (from config/countryLanguages.ts)
     const countryLanguageMap: { [key: string]: string[] } = {
-      // Major countries with their most likely languages
       'US': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
       'CA': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
       'MX': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
