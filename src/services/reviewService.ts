@@ -104,7 +104,7 @@ export async function fetchReviews(
     console.log(`📡 Calling reviews method for language: ${language}...`);
     const result = await reviewsMethod({
       appId: appid,
-      num: 500,
+      num: 200,
       country: country,
       lang: language
     });
@@ -122,7 +122,7 @@ export async function fetchReviews(
         console.log(`📡 Fetching reviews for language: ${lang}...`);
         const result = await reviewsMethod({
           appId: appid,
-          num: 500,
+          num: 200,
           country: country,
           lang: lang
         });
