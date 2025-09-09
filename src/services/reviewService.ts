@@ -31,7 +31,13 @@ function cleanReviewData(review: any): any {
     dislikes: review.dislikes || 0,
     unhelpful: review.unhelpful || 0,
     negative: review.negative || 0,
-    criterias: review.criterias || []
+    criterias: review.criterias || [],
+    // Additional requested fields (same data as existing fields)
+    nickname: review.userName || 'Anonymous User',
+    reviewDate: review.date || new Date().toISOString(),
+    header: review.title || null,
+    reviewRating: review.score || 3,
+    reviewText: review.text || 'No review text available'
   };
 }
 
@@ -72,27 +78,7 @@ function transformReviews(reviews: any[], appid: string): any[] {
       criterias: review.criterias || review.criteria || review.tags || []
     };
     
-    const cleanedReview = cleanReviewData(extractedReview);
-    
-    // Add additional requested fields (same data as existing fields) - cache clear
-    const result = {
-      ...cleanedReview,
-      nickname: cleanedReview.userName,
-      reviewDate: cleanedReview.date,
-      header: cleanedReview.title,
-      reviewRating: cleanedReview.score,
-      reviewText: cleanedReview.text
-    };
-    
-    console.log('🔍 Debug - Additional fields added:', {
-      nickname: result.nickname,
-      reviewDate: result.reviewDate,
-      header: result.header,
-      reviewRating: result.reviewRating,
-      reviewText: result.reviewText
-    });
-    
-    return result;
+    return cleanReviewData(extractedReview);
   });
 }
 
