@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleHealth(req, res);
   }
   
-  if (pathname === '/' || pathname === '') {
+  if (pathname === '/' || pathname === '' || pathname === '/app') {
     return handleReviews(req, res);
   }
   
