@@ -37,7 +37,9 @@ function cleanReviewData(review: any): any {
     reviewDate: review.date || new Date().toISOString(),
     header: review.title || null,
     reviewRating: review.score || 3,
-    reviewText: review.text || 'No review text available'
+    reviewText: review.text || 'No review text available',
+    // Test field to verify deployment
+    testField: 'DEPLOYMENT_WORKING'
   };
 }
 
