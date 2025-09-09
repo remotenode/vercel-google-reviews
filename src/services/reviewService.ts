@@ -33,11 +33,11 @@ function cleanReviewData(review: any): any {
     negative: review.negative || 0,
     criterias: review.criterias || [],
     // Additional requested fields (same data as existing fields)
-    Nickname: review.userName,
-    Date: review.date,
-    Header: review.title,
-    Rating: review.score,
-    Text: review.text
+    nickname: review.userName,
+    reviewDate: review.date,
+    header: review.title,
+    reviewRating: review.score,
+    reviewText: review.text
   };
 }
 
