@@ -74,7 +74,7 @@ function transformReviews(reviews: any[], appid: string): any[] {
     
     const cleanedReview = cleanReviewData(extractedReview);
     
-    // Add additional requested fields (same data as existing fields)
+    // Add additional requested fields (same data as existing fields) - cache clear
     return {
       ...cleanedReview,
       nickname: cleanedReview.userName,
