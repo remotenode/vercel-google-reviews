@@ -75,7 +75,7 @@ function transformReviews(reviews: any[], appid: string): any[] {
     const cleanedReview = cleanReviewData(extractedReview);
     
     // Add additional requested fields (same data as existing fields) - cache clear
-    return {
+    const result = {
       ...cleanedReview,
       nickname: cleanedReview.userName,
       reviewDate: cleanedReview.date,
@@ -83,6 +83,16 @@ function transformReviews(reviews: any[], appid: string): any[] {
       reviewRating: cleanedReview.score,
       reviewText: cleanedReview.text
     };
+    
+    console.log('🔍 Debug - Additional fields added:', {
+      nickname: result.nickname,
+      reviewDate: result.reviewDate,
+      header: result.header,
+      reviewRating: result.reviewRating,
+      reviewText: result.reviewText
+    });
+    
+    return result;
   });
 }
 
