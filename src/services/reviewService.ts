@@ -31,7 +31,13 @@ function cleanReviewData(review: any): any {
     dislikes: review.dislikes || 0,
     unhelpful: review.unhelpful || 0,
     negative: review.negative || 0,
-    criterias: review.criterias || []
+    criterias: review.criterias || [],
+    // Additional requested fields (same data as existing fields)
+    Nickname: review.userName || 'Anonymous User',
+    Date: review.date || new Date().toISOString(),
+    Header: review.title || null,
+    Rating: review.score || 3,
+    Text: review.text || 'No review text available'
   };
 }
 
