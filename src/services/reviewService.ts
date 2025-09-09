@@ -1,5 +1,5 @@
 /**
- * Review fetching and transformation service
+ * Review fetching and transformation service - UPDATED
  */
 
 import { getCountryLanguages } from '../config/countryLanguages.js';
