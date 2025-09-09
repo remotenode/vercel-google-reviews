@@ -31,13 +31,7 @@ function cleanReviewData(review: any): any {
     dislikes: review.dislikes || 0,
     unhelpful: review.unhelpful || 0,
     negative: review.negative || 0,
-    criterias: review.criterias || [],
-    // Additional requested fields (same data as existing fields)
-    nickname: review.userName,
-    reviewDate: review.date,
-    header: review.title,
-    reviewRating: review.score,
-    reviewText: review.text
+    criterias: review.criterias || []
   };
 }
 
@@ -78,7 +72,17 @@ function transformReviews(reviews: any[], appid: string): any[] {
       criterias: review.criterias || review.criteria || review.tags || []
     };
     
-    return cleanReviewData(extractedReview);
+    const cleanedReview = cleanReviewData(extractedReview);
+    
+    // Add additional requested fields (same data as existing fields)
+    return {
+      ...cleanedReview,
+      nickname: cleanedReview.userName,
+      reviewDate: cleanedReview.date,
+      header: cleanedReview.title,
+      reviewRating: cleanedReview.score,
+      reviewText: cleanedReview.text
+    };
   });
 }
 
