@@ -10,6 +10,30 @@ export const countryLanguagesMap: { [key: string]: string[] } = {
   'CA': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
   'MX': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
   
+  // Central America
+  'CR': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'GT': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'HN': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'SV': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'NI': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'PA': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'BZ': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  
+  // Caribbean
+  'JM': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'CU': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'DO': ['es', 'en', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'HT': ['fr', 'ht', 'en', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko'],
+  'TT': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'BB': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'BS': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'AG': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'DM': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'GD': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'KN': ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'LC': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'VC': ['en', 'fr', 'es', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  
   // South America
   'BR': ['pt', 'es', 'en', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
   'AR': ['es', 'en', 'pt', 'fr', 'de', 'it', 'ru', 'ja', 'ko', 'zh'],
@@ -170,7 +194,23 @@ export const countryLanguagesMap: { [key: string]: string[] } = {
   'GU': ['en', 'ch', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
   'MP': ['en', 'ch', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'es', 'it'],
   'VI': ['en', 'es', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it', 'pt'],
-  'PR': ['es', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it', 'pt']
+  'PR': ['es', 'en', 'ja', 'ko', 'zh', 'ru', 'fr', 'de', 'it', 'pt'],
+  
+  // Additional missing countries
+  'AD': ['ca', 'es', 'fr', 'en', 'de', 'it', 'pt', 'ru', 'ja', 'ko'],
+  'LI': ['de', 'en', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'MC': ['fr', 'en', 'it', 'es', 'de', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'SM': ['it', 'en', 'fr', 'de', 'es', 'pt', 'ru', 'ja', 'ko', 'zh'],
+  'VA': ['it', 'la', 'en', 'fr', 'de', 'es', 'pt', 'ru', 'ja', 'ko'],
+  'AL': ['sq', 'en', 'it', 'el', 'de', 'fr', 'es', 'pt', 'ru', 'ja'],
+  'MK': ['mk', 'en', 'sq', 'tr', 'de', 'fr', 'es', 'it', 'pt', 'ru'],
+  'ME': ['sr', 'en', 'bs', 'hr', 'de', 'fr', 'es', 'it', 'pt', 'ru'],
+  'BA': ['bs', 'hr', 'sr', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ru'],
+  'XK': ['sq', 'sr', 'en', 'tr', 'de', 'fr', 'es', 'it', 'pt', 'ru'],
+  'MD': ['ro', 'ru', 'en', 'uk', 'de', 'fr', 'es', 'it', 'pt', 'ja'],
+  'UA': ['uk', 'ru', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ja', 'ko'],
+  'BY': ['be', 'ru', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ja', 'ko'],
+  'RU': ['ru', 'en', 'de', 'fr', 'es', 'it', 'pt', 'ja', 'ko', 'zh']
 };
 
 /**
