@@ -91,19 +91,20 @@ export async function fetchReviews(
   language?: string,
   dateFilter?: string
 ): Promise<any[]> {
-  // Get country-specific languages
-  const supportedLanguages = getCountryLanguages(country);
-  
-  console.log(`🎯 Target - country: ${country}, language: ${language || 'ALL'}, date: ${dateFilter}`);
-  console.log(`🌍 Country-specific languages: ${supportedLanguages.join(', ')}`);
+  try {
+    // Get country-specific languages
+    const supportedLanguages = getCountryLanguages(country);
+    
+    console.log(`🎯 Target - country: ${country}, language: ${language || 'ALL'}, date: ${dateFilter}`);
+    console.log(`🌍 Country-specific languages: ${supportedLanguages.join(', ')}`);
 
-  // Import google-play-scraper dynamically
-  console.log('📦 Importing google-play-scraper...');
-  const gplay = await import('google-play-scraper');
-  console.log('✅ Library imported successfully');
-  
-  const reviewsMethod = (gplay as any).default.reviews;
-  let allReviews: any[] = [];
+    // Import google-play-scraper dynamically
+    console.log('📦 Importing google-play-scraper...');
+    const gplay = await import('google-play-scraper');
+    console.log('✅ Library imported successfully');
+    
+    const reviewsMethod = (gplay as any).default.reviews;
+    let allReviews: any[] = [];
 
   try {
     if (language) {
@@ -173,4 +174,9 @@ export async function fetchReviews(
   }
 
   return transformedReviews;
+  } catch (error) {
+    console.log(`⚠️ Failed to fetch reviews for app ${appid}:`, error);
+    // Return empty array instead of throwing error
+    return [];
+  }
 }
