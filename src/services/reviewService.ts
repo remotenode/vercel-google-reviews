@@ -105,45 +105,51 @@ export async function fetchReviews(
   const reviewsMethod = (gplay as any).default.reviews;
   let allReviews: any[] = [];
 
-  if (language) {
-    // Fetch reviews for specific language
-    console.log(`📡 Calling reviews method for language: ${language}...`);
-    const result = await reviewsMethod({
-      appId: appid,
-      num: 200,
-      country: country,
-      lang: language
-    });
-    
-    if (result?.data && Array.isArray(result.data)) {
-      allReviews = result.data;
-      console.log(`✅ Successfully fetched ${allReviews.length} reviews for language: ${language}`);
-    }
-  } else {
-    // Fetch reviews for all supported languages
-    console.log(`📡 Fetching reviews for all ${supportedLanguages.length} supported languages...`);
-    
-    for (const lang of supportedLanguages) {
-      try {
-        console.log(`📡 Fetching reviews for language: ${lang}...`);
-        const result = await reviewsMethod({
-          appId: appid,
-          num: 200,
-          country: country,
-          lang: lang
-        });
-        
-        if (result?.data && Array.isArray(result.data)) {
-          allReviews = allReviews.concat(result.data);
-          console.log(`✅ Fetched ${result.data.length} reviews for language: ${lang}`);
-        }
-      } catch (langError) {
-        console.log(`⚠️ Failed to fetch reviews for language ${lang}:`, langError);
-        // Continue with other languages
+  try {
+    if (language) {
+      // Fetch reviews for specific language
+      console.log(`📡 Calling reviews method for language: ${language}...`);
+      const result = await reviewsMethod({
+        appId: appid,
+        num: 200,
+        country: country,
+        lang: language
+      });
+      
+      if (result?.data && Array.isArray(result.data)) {
+        allReviews = result.data;
+        console.log(`✅ Successfully fetched ${allReviews.length} reviews for language: ${language}`);
       }
+    } else {
+      // Fetch reviews for all supported languages
+      console.log(`📡 Fetching reviews for all ${supportedLanguages.length} supported languages...`);
+      
+      for (const lang of supportedLanguages) {
+        try {
+          console.log(`📡 Fetching reviews for language: ${lang}...`);
+          const result = await reviewsMethod({
+            appId: appid,
+            num: 200,
+            country: country,
+            lang: lang
+          });
+          
+          if (result?.data && Array.isArray(result.data)) {
+            allReviews = allReviews.concat(result.data);
+            console.log(`✅ Fetched ${result.data.length} reviews for language: ${lang}`);
+          }
+        } catch (langError) {
+          console.log(`⚠️ Failed to fetch reviews for language ${lang}:`, langError);
+          // Continue with other languages
+        }
+      }
+      
+      console.log(`✅ Total reviews fetched from all languages: ${allReviews.length}`);
     }
-    
-    console.log(`✅ Total reviews fetched from all languages: ${allReviews.length}`);
+  } catch (error) {
+    console.log(`⚠️ Failed to fetch reviews for app ${appid}:`, error);
+    // Return empty array instead of throwing error
+    return [];
   }
 
   // Transform reviews to our API format
