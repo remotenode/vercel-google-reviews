@@ -120,3 +120,4 @@ function handleNotFound(req: VercelRequest, res: VercelResponse) {
   console.log('❌ Route not found:', req.url);
   return sendNotFoundResponse(res, `Route not found: ${req.url}`);
 }// Force deployment Fri Sep 12 14:06:40 +04 2025
+// Force redeploy 1757671974
