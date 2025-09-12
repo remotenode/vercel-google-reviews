@@ -85,18 +85,13 @@ async function handleReviews(req: VercelRequest, res: VercelResponse) {
       targetDate
     );
 
-    // Return success response
+    // Return success response (even with empty array)
     if (reviews.length > 0) {
       console.log(`✅ Successfully processed ${reviews.length} reviews`);
       return sendSuccessResponse(res, reviews, `Found ${reviews.length} reviews`);
     } else {
-      console.log('⚠️ No reviews found');
-      return sendErrorResponse(res, 404, 'No reviews found for this app', {
-        appid: appid,
-        country: targetCountry,
-        language: targetLanguage,
-        date: targetDate
-      });
+      console.log('⚠️ No reviews found - returning empty array');
+      return sendSuccessResponse(res, [], 'No reviews found for this app');
     }
 
   } catch (error) {
