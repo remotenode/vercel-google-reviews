@@ -1,2 +1,0 @@
-Force redeploy - $(date)
-This file is created to force Vercel to redeploy the application.
